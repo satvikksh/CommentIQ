@@ -50,12 +50,13 @@ export default function Navbar() {
             <Link href="/register">Register</Link>
           </Button>
 
-          <Button
-            asChild
-            className="bg-red-600 text-white hover:bg-red-700"
-          >
+          <Button asChild className="bg-red-600 text-white hover:bg-red-700">
             <Link href="/analyze">Analyze Now</Link>
           </Button>
+ <Button asChild className="bg-red-600 text-white hover:bg-red-700">
+            <Link href="/dashboard">Dashboard</Link>
+          </Button>
+       
         </div>
 
         {/* Mobile Button */}
@@ -81,6 +82,7 @@ export default function Navbar() {
                 {link.name}
               </Link>
             ))}
+       
 
             <Button variant="ghost" asChild>
               <Link href="/login">Login</Link>
@@ -90,10 +92,7 @@ export default function Navbar() {
               <Link href="/register">Register</Link>
             </Button>
 
-            <Button
-              asChild
-              className="bg-red-600 text-white hover:bg-red-700"
-            >
+            <Button asChild className="bg-red-600 text-white hover:bg-red-700">
               <Link href="/analyze">Analyze Now</Link>
             </Button>
           </div>
