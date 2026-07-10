@@ -24,9 +24,11 @@ export default function QuickActions() {
           </Link>
         </Button>
 
-        <Button variant="outline">
-          <Download className="mr-2 h-4 w-4" />
-          Export Reports
+        <Button variant="outline" asChild>
+          <Link href="/history">
+            <Download className="mr-2 h-4 w-4" />
+            Export Reports
+          </Link>
         </Button>
       </div>
     </div>

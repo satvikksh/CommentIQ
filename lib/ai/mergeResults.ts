@@ -23,11 +23,31 @@ interface AIResult {
 
   complaints?: string[];
 
+  suggestions?: string[];
+
+  praise?: string[];
+
   spam?: string[];
+
+  toxicComments?: string[];
+
+  hateSpeech?: string[];
 
   keywords?: string[];
 
+  trendingTopics?: string[];
+
+  mentionedProducts?: string[];
+
+  mentionedProblems?: string[];
+
+  userIntent?: string[];
+
+  communityOpinion?: string;
+
   recommendations?: string[];
+
+  actionableInsights?: string[];
 }
 
 export function mergeResults(results: AIResult[]) {
@@ -52,11 +72,31 @@ export function mergeResults(results: AIResult[]) {
 
     complaints: [] as string[],
 
+    suggestions: [] as string[],
+
+    praise: [] as string[],
+
     spam: [] as string[],
+
+    toxicComments: [] as string[],
+
+    hateSpeech: [] as string[],
 
     keywords: [] as string[],
 
+    trendingTopics: [] as string[],
+
+    mentionedProducts: [] as string[],
+
+    mentionedProblems: [] as string[],
+
+    userIntent: [] as string[],
+
+    communityOpinion: "",
+
     recommendations: [] as string[],
+
+    actionableInsights: [] as string[],
   };
 
   const categoryMap = new Map<
@@ -120,16 +160,56 @@ export function mergeResults(results: AIResult[]) {
       ...(result.complaints ?? [])
     );
 
+    merged.suggestions.push(
+      ...(result.suggestions ?? [])
+    );
+
+    merged.praise.push(
+      ...(result.praise ?? [])
+    );
+
     merged.spam.push(
       ...(result.spam ?? [])
+    );
+
+    merged.toxicComments.push(
+      ...(result.toxicComments ?? [])
+    );
+
+    merged.hateSpeech.push(
+      ...(result.hateSpeech ?? [])
     );
 
     merged.keywords.push(
       ...(result.keywords ?? [])
     );
 
+    merged.trendingTopics.push(
+      ...(result.trendingTopics ?? [])
+    );
+
+    merged.mentionedProducts.push(
+      ...(result.mentionedProducts ?? [])
+    );
+
+    merged.mentionedProblems.push(
+      ...(result.mentionedProblems ?? [])
+    );
+
+    merged.userIntent.push(
+      ...(result.userIntent ?? [])
+    );
+
+    if (result.communityOpinion) {
+      merged.communityOpinion = result.communityOpinion;
+    }
+
     merged.recommendations.push(
       ...(result.recommendations ?? [])
+    );
+
+    merged.actionableInsights.push(
+      ...(result.actionableInsights ?? [])
     );
   }
 
@@ -165,7 +245,25 @@ export function mergeResults(results: AIResult[]) {
 
   merged.complaints = [...new Set(merged.complaints)];
 
+  merged.suggestions = [...new Set(merged.suggestions)];
+
+  merged.praise = [...new Set(merged.praise)];
+
+  merged.toxicComments = [...new Set(merged.toxicComments)];
+
+  merged.hateSpeech = [...new Set(merged.hateSpeech)];
+
+  merged.trendingTopics = [...new Set(merged.trendingTopics)];
+
+  merged.mentionedProducts = [...new Set(merged.mentionedProducts)];
+
+  merged.mentionedProblems = [...new Set(merged.mentionedProblems)];
+
+  merged.userIntent = [...new Set(merged.userIntent)];
+
   merged.recommendations = [...new Set(merged.recommendations)];
+
+  merged.actionableInsights = [...new Set(merged.actionableInsights)];
 
   return merged;
 }

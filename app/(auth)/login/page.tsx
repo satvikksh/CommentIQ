@@ -1,15 +1,49 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
-import { FaGoogle, FaGithub } from "react-icons/fa";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth/client";
 
-export default function LoginPage() {
+function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const callbackURL = searchParams.get("callbackUrl") ?? "/dashboard";
+      const result = await authClient.signIn.email({
+        email,
+        password,
+        callbackURL,
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message ?? "Unable to sign in.");
+      }
+
+      router.push(callbackURL);
+      router.refresh();
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : "Unable to sign in.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-zinc-950 px-6 py-20 text-white">
@@ -41,34 +75,8 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Social Login */}
-        <div className="space-y-4">
-          <Button
-            variant="outline"
-            className="h-12 w-full border-white/10 bg-white/5 hover:bg-white/10"
-          >
-            <FaGoogle className="mr-3 text-lg" />
-            Continue with Google
-          </Button>
-
-          <Button
-            variant="outline"
-            className="h-12 w-full border-white/10 bg-white/5 hover:bg-white/10"
-          >
-            <FaGithub className="mr-3 text-lg" />
-            Continue with GitHub
-          </Button>
-        </div>
-
-        {/* Divider */}
-        <div className="my-8 flex items-center">
-          <div className="h-px flex-1 bg-white/10" />
-          <span className="px-4 text-sm text-zinc-500">OR</span>
-          <div className="h-px flex-1 bg-white/10" />
-        </div>
-
         {/* Form */}
-        <form className="space-y-5">
+        <form className="space-y-5" onSubmit={handleLogin}>
           <div>
             <label className="mb-2 block text-sm text-zinc-300">
               Email Address
@@ -76,8 +84,11 @@ export default function LoginPage() {
 
             <Input
               type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="john@example.com"
               className="h-12 border-white/10 bg-white/5"
+              required
             />
           </div>
 
@@ -89,8 +100,11 @@ export default function LoginPage() {
             <div className="relative">
               <Input
                 type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
                 placeholder="Enter your password"
                 className="h-12 border-white/10 bg-white/5 pr-12"
+                required
               />
 
               <button
@@ -125,8 +139,14 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <Button className="h-12 w-full bg-red-600 hover:bg-red-700">
-            Sign In
+          {error && (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200">
+              {error}
+            </div>
+          )}
+
+          <Button disabled={loading} className="h-12 w-full bg-red-600 hover:bg-red-700">
+            {loading ? "Signing in..." : "Sign In"}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </form>
@@ -144,5 +164,19 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
+          Loading...
+        </main>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -2,10 +2,12 @@ import openRouter from "./client";
 
 export async function chatWithAI(prompt: string) {
   try {
+    if (!process.env.OPENROUTER_MODEL) {
+      throw new Error("OPENROUTER_MODEL is not configured");
+    }
+
     const response = await openRouter.post("/chat/completions", {
-      model:
-        process.env.OPENROUTER_MODEL ||
-        "openai/gpt-oss-20b:free",
+      model: process.env.OPENROUTER_MODEL,
 
       temperature: 0.2,
 

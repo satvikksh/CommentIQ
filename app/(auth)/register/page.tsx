@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Eye,
   EyeOff,
@@ -9,13 +10,45 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { FaGoogle, FaGithub } from "react-icons/fa";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth/client";
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  async function handleRegister(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const result = await authClient.signUp.email({
+        name,
+        email,
+        password,
+        callbackURL: "/dashboard",
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message ?? "Unable to create account.");
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch (registerError) {
+      setError(registerError instanceof Error ? registerError.message : "Unable to create account.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-zinc-950 px-6 py-20 text-white">
@@ -53,45 +86,9 @@ export default function RegisterPage() {
 
         </div>
 
-        {/* Social Login */}
-
-        <div className="space-y-4">
-
-          <Button
-            variant="outline"
-            className="h-12 w-full border-white/10 bg-white/5 hover:bg-white/10"
-          >
-            <FaGoogle className="mr-3 text-lg" />
-            Continue with Google
-          </Button>
-
-          <Button
-            variant="outline"
-            className="h-12 w-full border-white/10 bg-white/5 hover:bg-white/10"
-          >
-            <FaGithub className="mr-3 text-lg" />
-            Continue with GitHub
-          </Button>
-
-        </div>
-
-        {/* Divider */}
-
-        <div className="my-8 flex items-center">
-
-          <div className="h-px flex-1 bg-white/10" />
-
-          <span className="px-4 text-sm text-zinc-500">
-            OR
-          </span>
-
-          <div className="h-px flex-1 bg-white/10" />
-
-        </div>
-
         {/* Form */}
 
-        <form className="space-y-5">
+        <form className="space-y-5" onSubmit={handleRegister}>
 
           <div>
 
@@ -100,8 +97,11 @@ export default function RegisterPage() {
             </label>
 
             <Input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
               placeholder="John Doe"
               className="h-12 border-white/10 bg-white/5"
+              required
             />
 
           </div>
@@ -114,8 +114,11 @@ export default function RegisterPage() {
 
             <Input
               type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="john@example.com"
               className="h-12 border-white/10 bg-white/5"
+              required
             />
 
           </div>
@@ -130,8 +133,12 @@ export default function RegisterPage() {
 
               <Input
                 type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
                 placeholder="Create a strong password"
                 className="h-12 border-white/10 bg-white/5 pr-12"
+                minLength={8}
+                required
               />
 
               <button
@@ -159,22 +166,31 @@ export default function RegisterPage() {
               <span>Password Strength</span>
 
               <span className="text-red-400">
-                Weak
+                {password.length >= 12 ? "Strong" : password.length >= 8 ? "Ready" : "Too short"}
               </span>
 
             </div>
 
             <div className="h-2 rounded-full bg-zinc-800">
 
-              <div className="h-2 w-1/4 rounded-full bg-red-500" />
+              <div
+                className="h-2 rounded-full bg-red-500"
+                style={{ width: `${Math.min(100, Math.max(10, password.length * 8))}%` }}
+              />
 
             </div>
 
           </div>
 
-          <Button className="h-12 w-full bg-red-600 hover:bg-red-700">
+          {error && (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200">
+              {error}
+            </div>
+          )}
 
-            Create Account
+          <Button disabled={loading} className="h-12 w-full bg-red-600 hover:bg-red-700">
+
+            {loading ? "Creating account..." : "Create Account"}
 
             <ArrowRight className="ml-2 h-4 w-4" />
 

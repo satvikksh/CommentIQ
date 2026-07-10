@@ -90,37 +90,6 @@ export default function CTA() {
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="mt-16 grid gap-8 border-t border-white/10 pt-10 md:grid-cols-4">
-            <div className="text-center">
-              <h3 className="text-4xl font-black">50K+</h3>
-              <p className="mt-2 text-zinc-500">
-                Comments Processed
-              </p>
-            </div>
-
-            <div className="text-center">
-              <h3 className="text-4xl font-black">5s</h3>
-              <p className="mt-2 text-zinc-500">
-                Average Analysis
-              </p>
-            </div>
-
-            <div className="text-center">
-              <h3 className="text-4xl font-black">98%</h3>
-              <p className="mt-2 text-zinc-500">
-                AI Accuracy
-              </p>
-            </div>
-
-            <div className="text-center">
-              <h3 className="text-4xl font-black">24/7</h3>
-              <p className="mt-2 text-zinc-500">
-                Available Anytime
-              </p>
-            </div>
-          </div>
-
         </div>
       </div>
     </section>

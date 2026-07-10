@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { z } from "zod";
 
 import { analyzeComments } from "@/lib/ai/analyzeComments";
 import { mergeResults } from "@/lib/ai/mergeResults";
+import {
+  ANONYMOUS_ANALYSIS_LIMIT,
+  ANONYMOUS_USAGE_COOKIE,
+  incrementAnonymousUsage,
+  readAnonymousUsage,
+  serializeAnonymousUsage,
+} from "@/lib/anonymousUsage";
 import { getSessionUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { chunkArray } from "@/lib/utils/chunkArray";
@@ -26,11 +34,6 @@ interface AnalysisCategoryResult {
 export async function POST(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
-
-    if (!user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
-
     const parsed = analyzeRequestSchema.safeParse(await req.json());
 
     if (!parsed.success) {
@@ -41,6 +44,22 @@ export async function POST(req: NextRequest) {
     }
 
     const { url, maxResults } = parsed.data;
+
+    if (!user) {
+      const usage = readAnonymousUsage(req);
+
+      if (usage.count >= ANONYMOUS_ANALYSIS_LIMIT) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "You have reached your free analysis limit.",
+            code: "ANONYMOUS_LIMIT_REACHED",
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     const { video, comments } = await resolveVideoMetadata(url);
 
     if (!comments.length) {
@@ -48,33 +67,34 @@ export async function POST(req: NextRequest) {
     }
 
     const limitedComments = comments.slice(0, Number(maxResults));
-    const existingAnalysis = await prisma.analysis.findFirst({
-      where: {
-        userId: user.id,
-        video: {
-          youtubeId: video.id,
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    if (existingAnalysis) {
-      const recent = Date.now() - new Date(existingAnalysis.createdAt).getTime();
-      if (recent < 1000 * 60 * 60 * 24) {
-        const cachedAnalysis = await prisma.analysis.findUnique({
-          where: { id: existingAnalysis.id },
-          include: {
-            video: true,
-            categories: true,
-            comments: true,
+    if (user) {
+      const existingAnalysis = await prisma.analysis.findFirst({
+        where: {
+          userId: user.id,
+          video: {
+            youtubeId: video.id,
           },
-        });
+        },
+        orderBy: { createdAt: "desc" },
+      });
 
-        return NextResponse.json({ success: true, report: cachedAnalysis, cached: true });
+      if (existingAnalysis) {
+        const recent = Date.now() - new Date(existingAnalysis.createdAt).getTime();
+        if (recent < 1000 * 60 * 60 * 24) {
+          const cachedAnalysis = await prisma.analysis.findUnique({
+            where: { id: existingAnalysis.id },
+            include: {
+              video: true,
+              categories: true,
+              comments: true,
+            },
+          });
+
+          return NextResponse.json({ success: true, report: cachedAnalysis, cached: true });
+        }
       }
     }
 
-    const videoRecord = await ensureVideoRecord(video);
     const chunks = chunkArray(limitedComments.map((comment) => comment.text), 80);
     const chunkResults = [] as Array<Record<string, unknown>>;
 
@@ -84,6 +104,56 @@ export async function POST(req: NextRequest) {
     }
 
     const merged = mergeResults(chunkResults as Array<Record<string, unknown>>);
+
+    if (!user) {
+      const updatedUsage = incrementAnonymousUsage(req);
+      const response = NextResponse.json({
+        success: true,
+        cached: false,
+        anonymous: true,
+        remainingFreeAnalyses: Math.max(0, ANONYMOUS_ANALYSIS_LIMIT - updatedUsage.count),
+        report: {
+          id: `temporary-${randomUUID()}`,
+          video,
+          title: video.title,
+          summary: merged.summary,
+          overallSentiment: merged.overallSentiment,
+          totalComments: limitedComments.length,
+          analyzedChunks: chunkResults.length,
+          aiMetadata: merged,
+          keywords: merged.keywords,
+          featureRequests: merged.featureRequests,
+          bugReports: merged.bugReports,
+          questions: merged.questions,
+          complaints: merged.complaints,
+          spam: merged.spam,
+          recommendations: merged.recommendations,
+          categories: merged.categories ?? [],
+          comments: limitedComments.map((comment) => ({
+            id: comment.id,
+            author: comment.author,
+            text: comment.text,
+            likeCount: comment.likeCount,
+            publishedAt: comment.publishedAt,
+            sentiment: merged.overallSentiment ?? "Neutral",
+          })),
+        },
+      });
+
+      response.cookies.set({
+        name: ANONYMOUS_USAGE_COOKIE,
+        value: serializeAnonymousUsage(updatedUsage),
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30,
+      });
+
+      return response;
+    }
+
+    const videoRecord = await ensureVideoRecord(video);
 
     const created = await prisma.$transaction(async (tx) => {
       const analysisRecord = await tx.analysis.create({

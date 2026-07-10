@@ -98,7 +98,7 @@ export default function TopNavbar() {
             <AvatarImage src="" />
 
             <AvatarFallback className="bg-red-600 text-white">
-              SK
+              CI
             </AvatarFallback>
 
           </Avatar>
@@ -106,11 +106,11 @@ export default function TopNavbar() {
           <div className="hidden text-left md:block">
 
             <h3 className="text-sm font-semibold">
-              Satvik
+              Account
             </h3>
 
             <p className="text-xs text-zinc-500">
-              Pro Plan
+              Workspace
             </p>
 
           </div>

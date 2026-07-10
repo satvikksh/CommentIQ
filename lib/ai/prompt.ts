@@ -38,10 +38,20 @@ Return exactly this structure:
   "featureRequests":[],
   "bugReports":[],
   "questions":[],
+  "suggestions":[],
   "complaints":[],
+  "praise":[],
   "spam":[],
+  "toxicComments":[],
+  "hateSpeech":[],
   "keywords":[],
-  "recommendations":[]
+  "trendingTopics":[],
+  "mentionedProducts":[],
+  "mentionedProblems":[],
+  "userIntent":[],
+  "communityOpinion":"",
+  "recommendations":[],
+  "actionableInsights":[]
 }
 
 Comments:
