@@ -1,6 +1,6 @@
 "use client";
 
-import { Brain, Sparkles, PlayCircle } from "lucide-react";
+import { Brain, Sparkles } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
 
 export default function AnalyzeHeader() {

@@ -3,14 +3,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req: NextRequest) {
+async function getAnalysisId(req: NextRequest) {
+  if (req.method === "GET") {
+    return req.nextUrl.searchParams.get("analysisId");
+  }
+
+  const body = await req.json();
+  return typeof body.analysisId === "string" ? body.analysisId : null;
+}
+
+async function handleExport(req: NextRequest) {
   const user = await getSessionUser(req);
 
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const { analysisId } = await req.json();
+  const analysisId = await getAnalysisId(req);
 
   if (!analysisId) {
     return NextResponse.json({ success: false, error: "analysisId is required" }, { status: 400 });
@@ -32,4 +41,12 @@ export async function POST(req: NextRequest) {
       "Content-Disposition": `attachment; filename="commentiq-analysis-${analysisId}.json"`,
     },
   });
+}
+
+export async function GET(req: NextRequest) {
+  return handleExport(req);
+}
+
+export async function POST(req: NextRequest) {
+  return handleExport(req);
 }

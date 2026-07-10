@@ -1,16 +1,35 @@
 "use client";
 
-import { Brain, Sparkles, TrendingUp, TrendingDown, Smile, AlertTriangle, Lightbulb, CheckCircle2 } from "lucide-react";
+import { Brain, Sparkles, TrendingUp, TrendingDown, CheckCircle2 } from "lucide-react";
 
 interface AnalysisSummaryProps {
-  summary: string;
-  positiveScore: number;
-  commentCount: number;
-  categoryCount: number;
-  negativeRate: number;
+  analysis: {
+    summary?: string | null;
+    totalComments?: number;
+    categories?: unknown[];
+    aiMetadata?: {
+      statistics?: {
+        positive?: number;
+        neutral?: number;
+        negative?: number;
+      };
+    } | null;
+  };
 }
 
-export default function AnalysisSummary({ summary, positiveScore, commentCount, categoryCount, negativeRate }: AnalysisSummaryProps) {
+function calculateRate(value: number | undefined, total: number) {
+  return total > 0 ? Math.round(((value ?? 0) / total) * 100) : 0;
+}
+
+export default function AnalysisSummary({ analysis }: AnalysisSummaryProps) {
+  const stats = analysis.aiMetadata?.statistics;
+  const sentimentTotal =
+    (stats?.positive ?? 0) + (stats?.neutral ?? 0) + (stats?.negative ?? 0);
+  const positiveScore = calculateRate(stats?.positive, sentimentTotal);
+  const negativeRate = calculateRate(stats?.negative, sentimentTotal);
+  const commentCount = analysis.totalComments ?? 0;
+  const categoryCount = analysis.categories?.length ?? 0;
+
   return (
     <section className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
       <div className="mb-8 flex items-center justify-between">
@@ -43,7 +62,7 @@ export default function AnalysisSummary({ summary, positiveScore, commentCount, 
       </div>
 
       <div className="rounded-2xl bg-zinc-900/60 p-6">
-        <p className="leading-7 text-zinc-400">{summary || "AI summary will appear here once the analysis completes."}</p>
+        <p className="leading-7 text-zinc-400">{analysis.summary || "AI summary will appear here once the analysis completes."}</p>
       </div>
 
       <div className="mt-8 grid gap-5 md:grid-cols-3">

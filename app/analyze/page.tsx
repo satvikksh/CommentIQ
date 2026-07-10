@@ -17,17 +17,83 @@ import CategoryGrid from "@/components/analysis/CategoryGrid";
 import CommentsTable from "@/components/analysis/CommentsTable";
 import ExportActions from "@/components/analysis/ExportActions";
 
+type AnalysisStatus = "idle" | "fetching" | "analyzing" | "completed" | "error";
+
+interface VideoData {
+  id: string;
+  title: string;
+  description?: string | null;
+  thumbnail: string;
+  channelTitle: string;
+  views: number;
+  likes: number;
+  comments: number;
+  publishedAt: string;
+  duration: string;
+}
+
+interface CategoryData {
+  name: string;
+  count: number;
+  summary?: string | null;
+  sampleComments?: string[];
+}
+
+interface CommentData {
+  id: string;
+  author?: string | null;
+  text: string;
+  sentiment?: string | null;
+  category?: string | null;
+  language?: string | null;
+  likeCount?: number;
+  publishedAt?: string | Date | null;
+}
+
+interface AnalysisData {
+  id: string;
+  summary?: string | null;
+  totalComments?: number;
+  categories?: CategoryData[];
+  comments?: CommentData[];
+  aiMetadata?: {
+    statistics?: {
+      positive?: number;
+      neutral?: number;
+      negative?: number;
+    };
+  } | null;
+}
+
+interface AnalysisReport extends AnalysisData {
+  video: VideoData;
+}
+
 export default function AnalyzePage() {
   const [url, setUrl] = useState("");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [video, setVideo] = useState<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [video, setVideo] = useState<VideoData | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([
+    "sentiment",
+    "categories",
+    "spam",
+    "feature",
+    "bugs",
+    "questions",
+    "keywords",
+  ]);
+  const [error, setError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<
-    "idle" | "fetching" | "analyzing" | "completed" | "error"
-  >("idle");
+  const [status, setStatus] = useState<AnalysisStatus>("idle");
+
+  function handleOptionToggle(id: string) {
+    setSelectedOptions((current) =>
+      current.includes(id)
+        ? current.filter((option) => option !== id)
+        : [...current, id]
+    );
+  }
 
   async function handleAnalyze() {
     if (!url.trim()) return;
@@ -35,13 +101,14 @@ export default function AnalyzePage() {
     try {
       setLoading(true);
       setStatus("fetching");
+      setError(null);
 
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, options: selectedOptions }),
       });
 
       const data = await response.json();
@@ -50,12 +117,15 @@ export default function AnalyzePage() {
         throw new Error(data.error || "Analysis failed.");
       }
 
-      setVideo(data.report.video);
-      setAnalysis(data.report.analysis);
+      const report = data.report as AnalysisReport;
+
+      setVideo(report.video);
+      setAnalysis(report);
 
       setStatus("completed");
     } catch (error) {
-      console.error(error);
+      const message = error instanceof Error ? error.message : "Analysis failed.";
+      setError(message);
       setStatus("error");
     } finally {
       setLoading(false);
@@ -75,7 +145,8 @@ export default function AnalyzePage() {
 
             <UrlInput
               url={url}
-              setUrl={setUrl}
+              onUrlChange={setUrl}
+              onVideoLoaded={setVideo}
             />
 
             {video && (
@@ -84,13 +155,18 @@ export default function AnalyzePage() {
               />
             )}
 
-            <AnalysisOptions selected={[]} onToggle={function (id: string): void {
-                          throw new Error("Function not implemented.");
-                      } } />
+            <AnalysisOptions selected={selectedOptions} onToggle={handleOptionToggle} />
+
+            {error && (
+              <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-5 text-red-200">
+                {error}
+              </div>
+            )}
 
             <AnalyzeButton
               loading={loading}
               onAnalyze={handleAnalyze}
+              disabled={!url.trim() || selectedOptions.length === 0}
             />
 
             {loading && (
@@ -99,7 +175,13 @@ export default function AnalyzePage() {
                   status={status}
                 />
 
-                <AnalysisProgress progress={0} processedComments={0} categoriesCount={0} elapsedSeconds={0} remainingSeconds={0} />
+                <AnalysisProgress
+                  progress={status === "fetching" ? 35 : 70}
+                  processedComments={analysis?.totalComments ?? 0}
+                  categoriesCount={analysis?.categories?.length ?? 0}
+                  elapsedSeconds={0}
+                  remainingSeconds={status === "fetching" ? 30 : 15}
+                />
               </>
             )}
 
@@ -110,14 +192,17 @@ export default function AnalyzePage() {
                 />
 
                 <CategoryGrid
-                  categories={analysis.categories}
+                  categories={analysis.categories ?? []}
                 />
 
                 <CommentsTable
                   comments={analysis.comments ?? []}
                 />
 
-                <ExportActions />
+                <ExportActions
+                  analysisId={analysis.id}
+                  summary={analysis.summary}
+                />
               </>
             )}
           </div>

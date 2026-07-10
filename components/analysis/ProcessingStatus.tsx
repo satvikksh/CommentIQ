@@ -4,7 +4,7 @@ import { Brain, Loader2, CheckCircle2, Database, Sparkles } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
 
 interface ProcessingStatusProps {
-  status: "idle" | "fetching" | "processing" | "completed";
+  status: "idle" | "fetching" | "processing" | "analyzing" | "completed" | "error";
 }
 
 const steps = [
@@ -59,7 +59,9 @@ export default function ProcessingStatus({ status }: ProcessingStatusProps) {
       <div className="space-y-5">
         {steps.map((step, index) => {
           const Icon = step.icon;
-          const active = status === "processing" && step.key === "processing";
+          const active =
+            (status === "processing" || status === "analyzing") &&
+            step.key === "processing";
           const completed = status === "completed";
 
           return (

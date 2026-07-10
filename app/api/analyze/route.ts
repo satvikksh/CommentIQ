@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 import { analyzeComments } from "@/lib/ai/analyzeComments";
 import { mergeResults } from "@/lib/ai/mergeResults";
@@ -9,6 +10,19 @@ import { ensureVideoRecord, resolveVideoMetadata } from "@/services/youtube.serv
 
 export const dynamic = "force-dynamic";
 
+const analyzeRequestSchema = z.object({
+  url: z.string().url(),
+  maxResults: z.coerce.number().int().min(1).max(1000).default(1000),
+  options: z.array(z.string()).optional(),
+});
+
+interface AnalysisCategoryResult {
+  name: string;
+  count?: number;
+  summary?: string;
+  sampleComments?: string[];
+}
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
@@ -17,12 +31,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const { url, maxResults = 1000 } = await req.json();
+    const parsed = analyzeRequestSchema.safeParse(await req.json());
 
-    if (!url) {
-      return NextResponse.json({ success: false, error: "YouTube URL is required." }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { success: false, error: parsed.error.issues[0]?.message ?? "Invalid request body." },
+        { status: 400 }
+      );
     }
 
+    const { url, maxResults } = parsed.data;
     const { video, comments } = await resolveVideoMetadata(url);
 
     if (!comments.length) {
@@ -90,7 +108,7 @@ export async function POST(req: NextRequest) {
 
       if (merged.categories?.length) {
         await tx.category.createMany({
-          data: merged.categories.map((category: any) => ({
+          data: merged.categories.map((category: AnalysisCategoryResult) => ({
             analysisId: analysisRecord.id,
             name: category.name,
             count: category.count ?? 0,

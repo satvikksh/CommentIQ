@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 
 import { getSessionUser } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
+import  {prisma}  from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   const user = await getSessionUser(req);
@@ -17,6 +16,7 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(Number(req.nextUrl.searchParams.get("limit") || 10), 50);
   const bookmarked = req.nextUrl.searchParams.get("bookmarked") === "true";
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const where: any = { userId: user.id };
 
   if (bookmarked) {

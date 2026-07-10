@@ -1,6 +1,7 @@
 import PDFDocument from "pdfkit";
 import { PassThrough } from "stream";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function buildAnalysisCsv(analysis: any) {
   const rows: string[] = [];
   rows.push("Section,Value");
@@ -11,6 +12,7 @@ export function buildAnalysisCsv(analysis: any) {
   rows.push(`Analyzed Chunks,${analysis.analyzedChunks ?? 0}`);
   rows.push("\nCategory,Count,Summary");
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (analysis.categories ?? []).forEach((category: any) => {
     rows.push(`${escapeCsv(category.name)},${category.count},${escapeCsv(category.summary ?? "")}`);
   });
@@ -18,10 +20,12 @@ export function buildAnalysisCsv(analysis: any) {
   return rows.join("\n");
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function buildAnalysisJson(analysis: any) {
   return JSON.stringify(analysis, null, 2);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function buildAnalysisPdf(analysis: any) {
   const doc = new PDFDocument({ size: "A4", margin: 40 });
   const stream = new PassThrough();
@@ -43,6 +47,7 @@ export async function buildAnalysisPdf(analysis: any) {
   doc.fontSize(14).fillColor("#f8fafc").text("Top Categories", { underline: true });
   doc.moveDown(0.5);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (analysis.categories ?? []).slice(0, 10).forEach((category: any) => {
     doc.fontSize(11).fillColor("#e2e8f0").text(`• ${category.name} (${category.count})`, { continued: true });
     if (category.summary) {

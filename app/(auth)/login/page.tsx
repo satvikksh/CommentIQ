@@ -133,7 +133,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="mt-8 text-center text-sm text-zinc-500">
-          Don't have an account?
+          Don&apos;t have an account?
 
           <Link
             href="/register"

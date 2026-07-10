@@ -163,17 +163,19 @@ export async function toggleBookmark(userId: string, analysisId: string) {
 }
 
 export async function getDashboardSummary(userId: string) {
-  const [analyses, totalComments, sentimentCounts, recent, notifications] = await Promise.all([
+  const [analyses, totalAnalyses, totalComments, sentimentCounts, recent, notifications] = await Promise.all([
     prisma.analysis.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
       take: 5,
       include: { video: true },
     }),
+    prisma.analysis.count({ where: { userId } }),
     prisma.comment.count({ where: { analysis: { userId } } }),
     prisma.analysis.groupBy({
       by: ["overallSentiment"],
       where: { userId },
+      _count: { overallSentiment: true },
     }),
     prisma.analysis.findMany({
       where: { userId },
@@ -189,10 +191,10 @@ export async function getDashboardSummary(userId: string) {
   ]);
 
   const totals = {
-    analyses: analyses.length,
+    analyses: totalAnalyses,
     comments: totalComments,
     categories: await prisma.category.count({ where: { analysis: { userId } } }),
-    positiveRate: sentimentCounts.find((item) => item.overallSentiment === "Positive")?._count ?? 0,
+    positiveRate: sentimentCounts.find((item) => item.overallSentiment === "Positive")?._count.overallSentiment ?? 0,
   };
 
   return {

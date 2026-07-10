@@ -8,8 +8,8 @@ const settingsSchema = z.object({
   theme: z.enum(["dark", "light"]).optional(),
   notifications: z.boolean().optional(),
   emailNotifications: z.boolean().optional(),
-  aiPreferences: z.record(z.boolean()).optional(),
-  exportPreferences: z.record(z.string()).optional(),
+  aiPreferences: z.record(z.string(), z.boolean()).optional(),
+  exportPreferences: z.record(z.string(), z.string()).optional(),
 });
 
 export async function GET(req: NextRequest) {

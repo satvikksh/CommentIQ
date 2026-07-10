@@ -16,21 +16,27 @@ import { Input } from "@/components/ui/input";
 interface VideoData {
   id: string;
   title: string;
+  description?: string | null;
   thumbnail: string;
   channelTitle: string;
   views: number;
   likes: number;
   comments: number;
+  publishedAt: string;
+  duration: string;
 }
 
 interface UrlInputProps {
+  url: string;
+  onUrlChange: (url: string) => void;
   onVideoLoaded?: (video: VideoData) => void;
 }
 
 export default function UrlInput({
+  url,
+  onUrlChange,
   onVideoLoaded,
 }: UrlInputProps) {
-  const [url, setUrl] = useState("");
   const [status, setStatus] = useState<
     "idle" | "valid" | "invalid"
   >("idle");
@@ -41,7 +47,7 @@ export default function UrlInput({
     try {
       const text = await navigator.clipboard.readText();
 
-      setUrl(text);
+      onUrlChange(text);
     } catch (error) {
       console.error(error);
     }
@@ -74,7 +80,7 @@ export default function UrlInput({
 
       setStatus("valid");
 
-      onVideoLoaded?.(data);
+      onVideoLoaded?.(data.data);
     } catch (error) {
       console.error(error);
 
@@ -109,7 +115,7 @@ export default function UrlInput({
           <Input
             value={url}
             onChange={(e) => {
-              setUrl(e.target.value);
+              onUrlChange(e.target.value);
 
               if (status !== "idle") {
                 setStatus("idle");
