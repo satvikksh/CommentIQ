@@ -1,10 +1,10 @@
-import Navbar from "@/components/layout/Navbar";
-import Hero from "@/components/home/Hero";
-import Features from "@/components/home/Features";
-import HowItWorks from "@/components/home/HowItWorks";
-import FAQ from "@/components/home/FAQ";
-import CTA from "@/components/home/CTA";
-import Footer from "@/components/layout/Footer";
+import Navbar from "@/app/components/layout/Navbar";
+import Hero from "@/app/components/home/Hero";
+import Features from "@/app/components/home/Features";
+import HowItWorks from "@/app/components/home/HowItWorks";
+import FAQ from "@/app/components/home/FAQ";
+import CTA from "@/app/components/home/CTA";
+import Footer from "@/app/components/layout/Footer";
 
 export default function Home() {
   return (

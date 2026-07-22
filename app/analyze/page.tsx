@@ -13,6 +13,7 @@ import AnalyzeButton from "@/components/analysis/AnalyzeButton";
 import ProcessingStatus from "@/components/analysis/ProcessingStatus";
 import AnalysisProgress from "@/components/analysis/AnalysisProgress";
 import AnalysisSummary from "@/components/analysis/AnalysisSummary";
+import SentimentCommentSections from "@/components/analysis/SentimentCommentSections";
 import CategoryGrid from "@/components/analysis/CategoryGrid";
 import CommentsTable from "@/components/analysis/CommentsTable";
 import ExportActions from "@/components/analysis/ExportActions";
@@ -43,7 +44,7 @@ interface CommentData {
   id: string;
   author?: string | null;
   text: string;
-  sentiment?: string | null;
+  sentiment?: "Positive" | "Neutral" | "Negative" | string | null;
   category?: string | null;
   language?: string | null;
   likeCount?: number;
@@ -52,10 +53,10 @@ interface CommentData {
 
 interface AnalysisData {
   id: string;
-  summary?: string | null;
+  summary: string;
   totalComments?: number;
-  categories?: CategoryData[];
-  comments?: CommentData[];
+  categories: CategoryData[];
+  comments: CommentData[];
   aiMetadata?: {
     statistics?: {
       positive?: number;
@@ -67,6 +68,23 @@ interface AnalysisData {
 
 interface AnalysisReport extends AnalysisData {
   video: VideoData;
+}
+
+function isCompleteAnalysisReport(value: unknown): value is AnalysisReport {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const report = value as Partial<AnalysisReport>;
+
+  return (
+    typeof report.id === "string" &&
+    typeof report.summary === "string" &&
+    report.summary.trim().length > 0 &&
+    Array.isArray(report.categories) &&
+    Array.isArray(report.comments) &&
+    Boolean(report.video)
+  );
 }
 
 export default function AnalyzePage() {
@@ -113,11 +131,15 @@ export default function AnalyzePage() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Analysis failed.");
+      if (!response.ok || !data.success) {
+        throw new Error(data.details || data.error || "Analysis failed.");
       }
 
-      const report = data.report as AnalysisReport;
+      if (!isCompleteAnalysisReport(data.report)) {
+        throw new Error("No Analysis Available: the API returned an incomplete analysis object.");
+      }
+
+      const report = data.report;
 
       setVideo(report.video);
       setAnalysis(report);
@@ -189,6 +211,10 @@ export default function AnalyzePage() {
               <>
                 <AnalysisSummary
                   analysis={analysis}
+                />
+
+                <SentimentCommentSections
+                  comments={analysis.comments ?? []}
                 />
 
                 <CategoryGrid

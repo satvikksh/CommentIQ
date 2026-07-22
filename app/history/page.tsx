@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Bookmark, Calendar, ChevronLeft, ChevronRight, Search } from "lucide-react";
 
-import Sidebar from "@/components/dashboard/Sidebar";
-import TopNavbar from "@/components/dashboard/TopNavbar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import Sidebar from "@/app/components/dashboard/Sidebar";
+import TopNavbar from "@/app/components/dashboard/TopNavbar";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
 
 interface HistoryVideo {
   title: string;
@@ -219,6 +220,11 @@ export default function HistoryPage() {
                           Bookmarked
                         </span>
                       )}
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/results?analysisId=${analysis.id}`}>
+                          View Results
+                        </Link>
+                      </Button>
                     </div>
                   </div>
                 </article>
